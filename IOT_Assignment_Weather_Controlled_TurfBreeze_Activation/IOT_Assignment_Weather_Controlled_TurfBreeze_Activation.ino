@@ -14,6 +14,7 @@ on the golf course without the need of human input.
 #include <ESPAsyncWebServer.h>
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
+#include <LiquidCrystal_I2C.h>
 
 
 //device access 
@@ -22,8 +23,11 @@ const char* password = "password";
 
 // DHT input pin & type 
 #define DHTInput 13
-#define DHTTYPE DHT11 
+#define DHTTYPE DHT22 
 DHT dht(DHTInput, DHTTYPE);
+
+// create LCD display
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // initiate temperature & humidity
 float temperature = 0.0;
@@ -113,6 +117,11 @@ void setup() {
  Serial.begin(115200); // for any debugging purposes
  dht.begin(); // activate dht sensor
 
+// activate lcd display
+ lcd.begin(16,2);
+ lcd.init();
+ lcd.backlight();
+
  // initiate onboard LED for easier fault identification
  pinMode(2, OUTPUT); // stays solid until loop starts 
 
@@ -121,6 +130,10 @@ void setup() {
  WiFi.softAP(ssid, password);
  // display IP address in serial monitor
  Serial.println(WiFi.softAPIP());
+
+  lcd.clear(); 
+  lcd.setCursor(2, 0); 
+  lcd.print("Initialising");
 
  // routing for web page
  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -154,6 +167,12 @@ float newTemperature = dht.readTemperature();
 float newHumidity = dht.readHumidity();
 if (isnan(newTemperature) && isnan(newHumidity)) {
   Serial.println("Failure - Could not read values from sensor");
+  lcd.clear(); 
+  lcd.setCursor(2, 0); 
+  lcd.print("Temperature");
+  lcd.setCursor(2, 1); 
+  lcd.print("Fault");
+  delay(1000);
   //flashing the on-board light 5 times at .5sec intervals to indicate fault with temp & humidity sensor
   int count = 0;
   while (count ++ < 5){
@@ -167,6 +186,14 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
   humidity = newHumidity;
   Serial.println(temperature);
   Serial.println(humidity);
+  lcd.clear(); 
+  lcd.setCursor(0, 0); 
+  lcd.print("Tem: ");
+  lcd.print(temperature);
+  lcd.setCursor(0, 1); 
+  lcd.print("Hum: ");
+  lcd.print(humidity);
+  lcd.print("%");
   // flashing on-board light 2 times at 1sec intervals to indicate operational
   int count =0;
   while (count ++ < 2) {
