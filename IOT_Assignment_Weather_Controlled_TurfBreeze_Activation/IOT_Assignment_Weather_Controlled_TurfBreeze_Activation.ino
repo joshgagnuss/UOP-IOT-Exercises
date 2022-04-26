@@ -26,6 +26,9 @@ const char* password = "password";
 #define DHTTYPE DHT22 
 DHT dht(DHTInput, DHTTYPE);
 
+// LED Output
+#define LED D5
+
 // create LCD display
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -124,6 +127,7 @@ void setup() {
 
  // initiate onboard LED for easier fault identification
  pinMode(2, OUTPUT); // stays solid until loop starts 
+ pinMode(LED, OUTPUT);
 
  // display in monitor for activation purposes
  Serial.println("Activating Sensor");
@@ -203,6 +207,11 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
     delay(2000);
   } 
 } // esle statement
+if (newTemperature > 25) {
+  digitalWrite(LED, HIGH);
+} else {
+  digitalWrite(LED, LOW);
+}
 } // if interval statement
 } // loop
 
