@@ -113,12 +113,12 @@ void setup() {
  dht.begin(); // activate dht sensor
 
  // initiate onboard LED for easier fault identification
- pinMode(2, OUTPUT);
+ pinMode(2, OUTPUT); // stays solid until loop starts 
 
-// display in monitor for activation purposes
+ // display in monitor for activation purposes
  Serial.println("Activating Sensor");
  WiFi.softAP(ssid, password);
-// display IP address in serial monitor
+ // display IP address in serial monitor
  Serial.println(WiFi.softAPIP());
 
  // routing for web page
@@ -152,33 +152,36 @@ if (currentMilliseconds - previousMilliseconds >= interval){
 float newTemperature = dht.readTemperature();
 if (isnan(newTemperature)) {
   Serial.println("Failure - Could not read temperature values from sensor");
-  //flashing the on-board light 5 times at .5sec intervals to indicate temperature fault
-  // gap between indication is 5 seconds
-  for (int i; i <= 5; i++){
+  //flashing the on-board light 5 times at .5sec intervals to indicate fault
+  int count = 0;
+  while (count ++ < 5){
     digitalWrite(2, HIGH);
     delay(500);
     digitalWrite(2, LOW);
     delay(500);
   }
+    
 } else {
   temperature = newTemperature;
   Serial.println(temperature);
   // flashing on-board light 2 times at 1sec intervals to indicate operational
-  for (int i; i <= 2; i++) {
+  int count =0;
+  while (count ++ < 2) {
     digitalWrite(2, HIGH);
     delay(2000);
     digitalWrite(2, LOW);
     delay(2000);
   }
+    
 }
 
 // read the humidity
 float newHumidity = dht.readHumidity();
 if (isnan(newHumidity)) {
   Serial.println("Failure - Could not read humidity from sensor");
-  //flashing the on-board light 4 times at .5sec intervals to indicate temperature fault
-  // gap between indication is 5 seconds 
-  for (int i; i <= 5; i++){
+  //flashing the on-board light 4 times at .5sec intervals to indicate fault
+  int count = 0;
+  while (count ++ < 4){
     digitalWrite(2, HIGH);
     delay(500);
     digitalWrite(2, LOW);
@@ -188,7 +191,8 @@ if (isnan(newHumidity)) {
   humidity = newHumidity;
   Serial.println(humidity);
   // flashing on-board light 2 times at 1sec intervals to indicate operational
-  for (int i; i <= 2; i++) {
+  int count =0;
+  while (count ++ < 2) {
     digitalWrite(2, HIGH);
     delay(2000);
     digitalWrite(2, LOW);
