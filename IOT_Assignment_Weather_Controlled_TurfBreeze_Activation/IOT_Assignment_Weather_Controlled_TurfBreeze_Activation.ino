@@ -135,6 +135,7 @@ void setup() {
  // display IP address in serial monitor
  Serial.println(WiFi.softAPIP());
 
+// lcd initalising text
   lcd.clear(); 
   lcd.setCursor(2, 0); 
   lcd.print("Initialising");
@@ -207,7 +208,7 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
     delay(2000);
   } 
 } // esle statement
-if (newTemperature > 25) {
+if (newTemperature >= 25) {
   digitalWrite(LED, HIGH);
 } else {
   digitalWrite(LED, LOW);
