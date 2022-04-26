@@ -15,12 +15,13 @@ on the golf course without the need of human input.
 #include <Adafruit_Sensor.h>
 #include <DHT.h>
 
+
 //device access 
 const char* ssid = "Remote-Turfbreeze";
 const char* password = "password";
 
 // DHT input pin & type 
-#define DHTInput 5 
+#define DHTInput 13
 #define DHTTYPE DHT11 
 DHT dht(DHTInput, DHTTYPE);
 
@@ -150,9 +151,10 @@ if (currentMilliseconds - previousMilliseconds >= interval){
 
 // read the temperature (Celsius)
 float newTemperature = dht.readTemperature();
-if (isnan(newTemperature)) {
-  Serial.println("Failure - Could not read temperature values from sensor");
-  //flashing the on-board light 5 times at .5sec intervals to indicate fault
+float newHumidity = dht.readHumidity();
+if (isnan(newTemperature) && isnan(newHumidity)) {
+  Serial.println("Failure - Could not read values from sensor");
+  //flashing the on-board light 5 times at .5sec intervals to indicate fault with temp & humidity sensor
   int count = 0;
   while (count ++ < 5){
     digitalWrite(2, HIGH);
@@ -160,35 +162,10 @@ if (isnan(newTemperature)) {
     digitalWrite(2, LOW);
     delay(500);
   }
-    
 } else {
   temperature = newTemperature;
-  Serial.println(temperature);
-  // flashing on-board light 2 times at 1sec intervals to indicate operational
-  int count =0;
-  while (count ++ < 2) {
-    digitalWrite(2, HIGH);
-    delay(2000);
-    digitalWrite(2, LOW);
-    delay(2000);
-  }
-    
-}
-
-// read the humidity
-float newHumidity = dht.readHumidity();
-if (isnan(newHumidity)) {
-  Serial.println("Failure - Could not read humidity from sensor");
-  //flashing the on-board light 4 times at .5sec intervals to indicate fault
-  int count = 0;
-  while (count ++ < 4){
-    digitalWrite(2, HIGH);
-    delay(500);
-    digitalWrite(2, LOW);
-    delay(500);
-  }
-} else {
   humidity = newHumidity;
+  Serial.println(temperature);
   Serial.println(humidity);
   // flashing on-board light 2 times at 1sec intervals to indicate operational
   int count =0;
@@ -197,8 +174,8 @@ if (isnan(newHumidity)) {
     delay(2000);
     digitalWrite(2, LOW);
     delay(2000);
-  }
-}
-}
-}
+  } 
+} // esle statement
+} // if interval statement
+} // loop
 
