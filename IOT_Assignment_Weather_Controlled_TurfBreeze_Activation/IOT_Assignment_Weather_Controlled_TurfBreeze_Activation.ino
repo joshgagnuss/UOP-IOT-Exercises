@@ -43,7 +43,7 @@ AsyncWebServer server(80);
 unsigned long previousMilliseconds = 0;
 
 // DHT sensor update intervals (20 Seconds)
-const long interval = 10000;
+const long interval = 5000;
 
 // UI
 const char index_html[] PROGMEM = R"rawliteral(
@@ -135,10 +135,13 @@ void setup() {
  // display IP address in serial monitor
  Serial.println(WiFi.softAPIP());
 
-// lcd initalising text
+// lcd initalising text & IP
   lcd.clear(); 
   lcd.setCursor(2, 0); 
   lcd.print("Initialising");
+  lcd.setCursor(2, 1); 
+  lcd.print(WiFi.softAPIP());
+  delay(5000);
 
  // routing for web page
  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -154,6 +157,9 @@ void setup() {
  server.on("/humidity", HTTP_GET, [](AsyncWebServerRequest *request){
    request->send_P(200, "text/plain", String(humidity).c_str());
  });
+
+ // manual ovverride with button and trigger 
+
 
  // activate the server
  server.begin();
