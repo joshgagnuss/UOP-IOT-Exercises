@@ -16,7 +16,6 @@ on the golf course without the need of human input.
 #include <DHT.h>
 #include <LiquidCrystal_I2C.h>
 
-
 //device access 
 const char* ssid = "Remote-Turfbreeze";
 const char* password = "password";
@@ -106,7 +105,7 @@ setInterval(function ( ) {
 </html>)rawliteral";
 
 // place values into html when readings are available 
-String processor(const String& var){
+String processor(const String& var) {
   //Serial.println(var); #uncomment if debugging required
   if (var == "TEMPERATURE"){
     return String(temperature);
@@ -201,6 +200,7 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
   lcd.setCursor(0, 0); 
   lcd.print("Tem: ");
   lcd.print(temperature);
+  lcd.print("C");
   lcd.setCursor(0, 1); 
   lcd.print("Hum: ");
   lcd.print(humidity);
