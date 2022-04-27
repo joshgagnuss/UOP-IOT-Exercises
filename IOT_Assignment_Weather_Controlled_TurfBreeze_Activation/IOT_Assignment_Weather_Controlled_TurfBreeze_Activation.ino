@@ -61,7 +61,9 @@ const long interval = 5000;
 const char index_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
+  <title>Remote Turf Breeze</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="10">
   <style>
     html {
      font-family: Arial;
