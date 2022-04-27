@@ -28,6 +28,19 @@ DHT dht(DHTInput, DHTTYPE);
 // LED Output
 #define LED D5
 
+// relay type NO = normally open
+#define RELAY_NO false
+
+// number of relays
+#define NUM_RELAYS 1
+
+// relay gpio pins
+int relayGPIO[NUM_RELAYS] = {12};
+
+// relay params
+const char* PARAM_1 = "relay";
+const char* PARAM_2 = "state";
+
 // create LCD display
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -64,10 +77,19 @@ const char index_html[] PROGMEM = R"rawliteral(
       vertical-align:middle;
       padding-bottom: 15px;
     }
+     body {max-width: 600px; margin:0px auto; padding-bottom: 25px;}
+    .switch {position: relative; display: inline-block; width: 120px; height: 68px} 
+    .switch input {display: none}
+    .slider {position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 34px}
+    .slider:before {position: absolute; content: ""; height: 52px; width: 52px; left: 8px; bottom: 8px; background-color: #fff; -webkit-transition: .4s; transition: .4s; border-radius: 68px}
+    input:checked+.slider {background-color: #2196F3}
+    input:checked+.slider:before {-webkit-transform: translateX(52px); -ms-transform: translateX(52px); transform: translateX(52px)}
   </style>
 </head>
 <body>
   <h2>Remote Turf Breeze Monitor</h2>
+  %BUTTONPLACEHOLDER%
+
   <p>
     <span class="dht-labels">Temperature</span> 
     <span id="temperature">%TEMPERATURE%</span>
@@ -78,8 +100,17 @@ const char index_html[] PROGMEM = R"rawliteral(
     <span id="humidity">%HUMIDITY%</span>
     <sup class="units">%</sup>
   </p>
+
+<script>function toggleCheckbox(element) {
+  var xhr = new XMLHttpRequest();
+  if(element.checked){ xhr.open("GET", "/update?relay="+element.id+"&state=1", true); }
+  else { xhr.open("GET", "/update?relay="+element.id+"&state=0", true); }
+  xhr.send();
+}</script>
+
 </body>
 <script>
+
 setInterval(function ( ) {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
@@ -101,6 +132,7 @@ setInterval(function ( ) {
   xhttp.open("GET", "/humidity", true);
   xhttp.send();
 }, 10000 ) ;
+
 </script>
 </html>)rawliteral";
 
@@ -111,8 +143,37 @@ String processor(const String& var) {
     return String(temperature);
   } else if (var == "HUMIDITY") {
     return String(humidity);
+  } 
+   if(var == "BUTTONPLACEHOLDER"){
+    String buttons ="";
+    for(int i=1; i<=NUM_RELAYS; i++){
+      String relayStateValue = relayState(i);
+      buttons+= "<h4>Relay #" + String(i) + " - GPIO " + relayGPIO[i-1] + "</h4><label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"" + String(i) + "\" "+ relayStateValue +"><span class=\"slider\"></span></label>";
+    }
+    return buttons;
   }
   return String();
+}
+
+// relat state management
+String relayState(int numRelay){
+  if(RELAY_NO){
+    if(digitalRead(relayGPIO[numRelay-1])){
+      return "";
+    }
+    else {
+      return "checked";
+    }
+  }
+  else {
+    if(digitalRead(relayGPIO[numRelay-1])){
+      return "checked";
+    }
+    else {
+      return "";
+    }
+  }
+  return "";
 }
 
 void setup() {
@@ -127,6 +188,17 @@ void setup() {
  // initiate onboard LED for easier fault identification
  pinMode(2, OUTPUT); // stays solid until loop starts 
  pinMode(LED, OUTPUT);
+
+ // set relays to open
+ for(int i=1; i<=NUM_RELAYS; i++){
+    pinMode(relayGPIO[i-1], OUTPUT);
+    if(RELAY_NO){
+      digitalWrite(relayGPIO[i-1], HIGH);
+    }
+    else{
+      digitalWrite(relayGPIO[i-1], LOW);
+    }
+  }
 
  // display in monitor for activation purposes
  Serial.println("Activating Sensor");
@@ -158,7 +230,33 @@ void setup() {
  });
 
  // manual ovverride with button and trigger 
-
+server.on("/update", HTTP_GET, [] (AsyncWebServerRequest *request) {
+    String inputMessage;
+    String inputParam;
+    String inputMessage2;
+    String inputParam2;
+    // GET input1 value on <ESP_IP>/update?relay=<inputMessage>
+    if (request->hasParam(PARAM_1) & request->hasParam(PARAM_2)) {
+      inputMessage = request->getParam(PARAM_1)->value();
+      inputParam = PARAM_1;
+      inputMessage2 = request->getParam(PARAM_2)->value();
+      inputParam2 = PARAM_2;
+      if(RELAY_NO){
+        Serial.print("NO ");
+        digitalWrite(relayGPIO[inputMessage.toInt()-1], !inputMessage2.toInt());
+      }
+      else{
+        Serial.print("NC ");
+        digitalWrite(relayGPIO[inputMessage.toInt()-1], inputMessage2.toInt());
+      }
+    }
+    else {
+      inputMessage = "No message sent";
+      inputParam = "none";
+    }
+    Serial.println(inputMessage + inputMessage2);
+    request->send(200, "text/plain", "OK");
+  });
 
  // activate the server
  server.begin();
@@ -168,15 +266,18 @@ void loop() {
   // set millisecond counter
 unsigned long currentMilliseconds = millis();
 
-
 if (currentMilliseconds - previousMilliseconds >= interval){
   previousMilliseconds = currentMilliseconds; // saves the last time DHT values were read
 
-// read the temperature (Celsius)
+// read the temperature/humidity (Celsius)
 float newTemperature = dht.readTemperature();
 float newHumidity = dht.readHumidity();
+
+// check for the sensor values anf execute accordingly
 if (isnan(newTemperature) && isnan(newHumidity)) {
+  // seiral debugging
   Serial.println("Failure - Could not read values from sensor");
+  // print temperature fault to lcd
   lcd.clear(); 
   lcd.setCursor(2, 0); 
   lcd.print("Temperature");
@@ -192,10 +293,13 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
     delay(500);
   }
 } else {
+  // set temperature values
   temperature = newTemperature;
   humidity = newHumidity;
+  // serial debugging
   Serial.println(temperature);
   Serial.println(humidity);
+  //print values to lcd
   lcd.clear(); 
   lcd.setCursor(0, 0); 
   lcd.print("Tem: ");
@@ -214,10 +318,14 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
     delay(2000);
   } 
 } // esle statement
+
+// activate light and relay when criteria is met
 if (newTemperature >= 25) {
   digitalWrite(LED, HIGH);
+  digitalWrite(12, HIGH);
 } else {
   digitalWrite(LED, LOW);
+  digitalWrite(12, LOW);
 }
 } // if interval statement
 } // loop
