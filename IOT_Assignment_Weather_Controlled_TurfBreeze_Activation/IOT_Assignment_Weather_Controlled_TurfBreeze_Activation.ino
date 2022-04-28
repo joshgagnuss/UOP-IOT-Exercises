@@ -55,7 +55,7 @@ AsyncWebServer server(80);
 unsigned long previousMilliseconds = 0;
 
 // DHT sensor update intervals (20 Seconds)
-const long interval = 5000;
+const long interval = 50000;
 
 // UI
 const char index_html[] PROGMEM = R"rawliteral(
@@ -322,7 +322,7 @@ if (isnan(newTemperature) && isnan(newHumidity)) {
 } // esle statement
 
 // activate light and relay when criteria is met
-if (newTemperature >= 25) {
+if (newTemperature >= 25 || newHumidity >= 80) {
   digitalWrite(LED, HIGH);
   digitalWrite(12, HIGH);
 } else {
